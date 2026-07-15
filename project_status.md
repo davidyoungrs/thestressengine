@@ -41,7 +41,15 @@ The following engineering modules have been fully implemented with dynamic input
    - Flat plates (Rectangular and Circular) with simply supported and clamped conditions
    - Thin-walled shells (Cylinders under axial/radial load, Spheres under external pressure)
    - Instability threshold load calculations
-9. **Interactive Formula Guide**
+9. **Dynamic Loads**
+   - Impact loading (dropped weight, impact factor amplification)
+   - Natural frequencies (Spring-Mass, Cantilever, Simply Supported)
+10. **Shells of Revolution**
+   - Membrane stresses for spherical domes, cylindrical shells, and conical shells under internal/external pressure
+11. **Curved Beams**
+   - Winkler-Bach theory for non-linear stress distribution
+   - Solid Rectangular and Solid Circular sections
+12. **Interactive Formula Guide**
    - Live rendering of primary governing equations using KaTeX.
 
 ## ✨ Core Features Added
@@ -52,11 +60,8 @@ The following engineering modules have been fully implemented with dynamic input
 ---
 
 ## ⏳ Pending / Next Steps
-The following modules from the original Python implementation backlog are awaiting migration:
-
-- [ ] **Curved Beams:** Winkler-Bach theory.
-- [ ] **Shells:** Shells of revolution (spherical, cylindrical, conical).
-- [ ] **Dynamic Loads:** Natural frequencies and shock loading.
+*All modules from the original Python implementation backlog have been successfully migrated!*
+The core engineering suite is **100% complete**. Future updates may involve adding entirely new textbook chapters or integrating real-time finite element visualizations.
 
 ## ☁️ Deployment
 The project is a static site and is ready to be deployed to **Vercel**, **Netlify**, or **GitHub Pages**. 
