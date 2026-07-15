@@ -56,6 +56,9 @@ The following engineering modules have been fully implemented with dynamic input
 - **Global Unit Toggle:** Switch instantly between Imperial (in, lbs, psi) and Metric (mm, N, MPa).
 - **Material Presets:** Auto-populating $E$, $\nu$, and $\sigma_y$ for common metals (Steel, Aluminum, etc.).
 - **Visual Safety Factors:** Color-coded status alerts based on design limits.
+- **Exporting Options:** One-click exporting of current module calculations to A4 PDF reports and raw CSV data.
+- **Independent Layout:** Sleek independently scrolling sidebar navigation with custom dark scrollbars.
+- **Legal Infrastructure:** Standard static boilerplate policies (Privacy, Cookies, Terms) tailored for local-only execution apps.
 
 ---
 
