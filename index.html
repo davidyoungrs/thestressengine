@@ -1,0 +1,1677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Formulas sourced from Roark's Formulas for Stress and Strain, 8th Ed. For educational/engineering reference only.">
+  <title>Roark's Stress & Strain Calculator Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Chart.js CDN for high-performance plotting -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- KaTeX for high-performance math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsRQOaOmto18iE1882z8x2IqBXBXvK5h6Hux2wGz7S9nL4bFwZ2G5hDkEM" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbOxyj0O/OEXjOMvO53yBfQZ51" crossorigin="anonymous"></script>
+  <!-- Export Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Settings Modal -->
+    <div id="settings-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 999; align-items: center; justify-content: center;">
+      <div class="panel" style="width: 400px; max-width: 90vw;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+          <h2 class="panel-title" style="margin: 0;">Settings</h2>
+          <button onclick="document.getElementById('settings-modal').style.display='none'" style="background: none; border: none; color: var(--text-secondary); cursor: pointer;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Unit System</label>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+            <button id="btn-unit-imperial" class="btn btn-secondary active" style="flex: 1;">Imperial</button>
+            <button id="btn-unit-metric" class="btn btn-secondary" style="flex: 1;">Metric</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="logo-container">
+        <div class="logo-icon">SE</div>
+        <div class="logo-text">Stress Engine</div>
+      </div>
+      
+      <ul class="nav-menu">
+        <li class="nav-item active" data-module="flat_plates">
+          <button>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+            <span>Flat Plates</span>
+          </button>
+        </li>
+        <li class="nav-item" data-module="beams">
+          <button>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="12" x2="18" y2="12"/><line x1="12" y1="6" x2="12" y2="18"/></svg>
+            <span>Straight Beams</span>
+          </button>
+        </li>
+        <li class="nav-item" data-module="contact">
+          <button>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="4"/><circle cx="16" cy="16" r="4"/><line x1="11" y1="11" x2="13" y2="13"/></svg>
+            <span>Contact Stresses</span>
+          </button>
+        </li>
+        <li class="nav-item" data-module="torsion">
+          <button>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 22a10 10 0 0 1-10-10"/><path d="M12 2v4M12 22v-4M2 12h4M22 12h-4"/></svg>
+            <span>Torsion</span>
+          </button>
+        </li>
+        <li class="nav-item" data-module="columns">
+          <button>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="20" rx="1"/><line x1="9" y1="2" x2="15" y2="2"/><line x1="9" y1="22" x2="15" y2="22"/></svg>
+            <span>Columns</span>
+          </button>
+        </li>
+        <li class="nav-item" data-module="pressure_vessels">
+          <button>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3"/></svg>
+            <span>Pressure Vessels</span>
+          </button>
+        </li>
+        <li class="nav-item" data-module="concentration">
+          <button>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span>Stress Concentration</span>
+          </button>
+        </li>
+        <li class="nav-item" data-module="buckling">
+          <button>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M3 12h18"/><path d="M12 3v18"/></svg>
+            <span>Buckling</span>
+          </button>
+        </li>
+        <li class="nav-item" data-module="dynamic">
+          <button>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            <span>Dynamic Loads</span>
+          </button>
+        </li>
+        <li class="nav-item" data-module="shells">
+          <button>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20z"/><path d="M2 12h20"/></svg>
+            <span>Shells of Revolution</span>
+          </button>
+        </li>
+        <li class="nav-item" data-module="curved_beams">
+          <button>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12s2.545-5 7-5c4.454 0 7 5 7 5s-2.546 5-7 5c-4.455 0-7-5-7-5z"/></svg>
+            <span>Curved Beams</span>
+          </button>
+        </li>
+        <li class="nav-item" data-module="formulas">
+          <button>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5v-15z"/></svg>
+            <span>Formula Guide</span>
+          </button>
+        </li>
+      </ul>
+      
+      <div class="sidebar-footer">
+        <button id="btn-open-settings" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; padding: 0.5rem 0; margin-bottom: 1rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; width: 100%;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </button>
+        <div class="version-info" style="font-size: 0.75rem;">
+          <p>Roark's Assistant v1.0.0</p>
+          <p style="margin-top: 0.2rem; opacity: 0.8;">&copy; 2026 Really Simple Apps</p>
+          <p style="margin-top: 0.4rem; opacity: 0.6; line-height: 1.4;">Disclaimer: Formulas sourced from Roark's Formulas for Stress and Strain, 8th Ed. For educational/engineering reference only.</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+
+      <!-- ================= FLAT PLATES MODULE ================= -->
+      <section id="view-flat_plates" class="module-view active">
+        <header class="module-header">
+          <h1 class="module-title">Flat Plates Engine</h1>
+          <p class="module-description">Calculate bending, shear, deflection, and stress distributions for circular, rectangular, and odd plate geometries under edge boundaries.</p>
+        </header>
+
+        <!-- Sub-tabs for Flat Plates Geometries -->
+        <div class="tab-container" style="margin-bottom: 1.5rem;">
+          <div class="tab-bar" id="plate-geometry-tabs">
+            <button class="tab-btn active" data-geometry="circular">Circular / Annular</button>
+            <button class="tab-btn" data-geometry="rectangular">Rectangular</button>
+            <button class="tab-btn" data-geometry="odd_shapes">Odd Shapes</button>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Parameter Panel -->
+          <div class="glass-card">
+            <h3 class="card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+              Calculation Parameters
+            </h3>
+            
+            <!-- Global / Material Inputs -->
+            <div class="form-group">
+              <label class="form-label" for="v">Poisson's Ratio (ν)</label>
+              <div class="form-input-container">
+                <input type="number" id="v" class="form-input" value="0.30" step="0.01" min="0" max="0.5">
+                <span class="form-input-unit">ratio</span>
+              </div>
+            </div>
+
+            <!-- DYNAMIC INPUT SECTIONS -->
+            
+            <!-- 1. Circular Plate Parameters -->
+            <div id="inputs-circular" class="geometry-inputs-group">
+              <div class="form-group">
+                <label class="form-label" for="plate-edge-circular">Edge Support Option</label>
+                <select id="plate-edge-circular" class="form-input" style="background: var(--bg-tertiary);">
+                  <option value="simply_supported" selected>Simply Supported Edges</option>
+                  <option value="clamped">Clamped / Fixed Edges</option>
+                  <option value="guided">Guided Edges</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="a">Outer Radius (a)</label>
+                <div class="form-input-container">
+                  <input type="number" id="a" class="form-input" value="10.0" step="0.5" min="0.1">
+                  <span class="form-input-unit">in</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="b">Inner Radius (b)</label>
+                <div class="form-input-container">
+                  <input type="number" id="b" class="form-input" value="5.0" step="0.5" min="0">
+                  <span class="form-input-unit">in</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="r">Radius of Interest (r)</label>
+                <div class="form-input-container">
+                  <input type="number" id="r" class="form-input" value="6.0" step="0.1" min="0.1">
+                  <span class="form-input-unit">in</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="ro">Load/Action Radius (r₀)</label>
+                <div class="form-input-container">
+                  <input type="number" id="ro" class="form-input" value="7.0" step="0.1" min="0.1">
+                  <span class="form-input-unit">in</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="circ-t">Plate Thickness (t)</label>
+                <div class="form-input-container">
+                  <input type="number" id="circ-t" class="form-input" value="0.25" step="0.01" min="0.01">
+                  <span class="form-input-unit">in</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="circ-q">Uniform Load (q)</label>
+                <div class="form-input-container">
+                  <input type="number" id="circ-q" class="form-input" value="5.0" step="0.5" min="0">
+                  <span class="form-input-unit">psi</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="circ-E">Modulus of Elasticity (E)</label>
+                <div class="form-input-container">
+                  <input type="number" id="circ-E" class="form-input" value="29000000" step="1000000" min="100000">
+                  <span class="form-input-unit">psi</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Rectangular Plate Parameters -->
+            <div id="inputs-rectangular" class="geometry-inputs-group" style="display: none;">
+              <div class="form-group">
+                <label class="form-label" for="plate-edge-rectangular">Edge Support Option</label>
+                <select id="plate-edge-rectangular" class="form-input" style="background: var(--bg-tertiary);">
+                  <option value="simply_supported" selected>All Edges Simply Supported</option>
+                  <option value="clamped">All Edges Clamped / Fixed</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="rect-a">Plate Length (a)</label>
+                <div class="form-input-container">
+                  <input type="number" id="rect-a" class="form-input" value="15.0" step="0.5" min="0.1">
+                  <span class="form-input-unit">in</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="rect-b">Plate Width (b)</label>
+                <div class="form-input-container">
+                  <input type="number" id="rect-b" class="form-input" value="10.0" step="0.5" min="0.1">
+                  <span class="form-input-unit">in</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="rect-t">Plate Thickness (t)</label>
+                <div class="form-input-container">
+                  <input type="number" id="rect-t" class="form-input" value="0.25" step="0.01" min="0.01">
+                  <span class="form-input-unit">in</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="rect-q">Uniform Pressure Load (q)</label>
+                <div class="form-input-container">
+                  <input type="number" id="rect-q" class="form-input" value="5.0" step="0.5" min="0">
+                  <span class="form-input-unit">psi</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="rect-E">Modulus of Elasticity (E)</label>
+                <div class="form-input-container">
+                  <input type="number" id="rect-E" class="form-input" value="29000000" step="1000000" min="100000">
+                  <span class="form-input-unit">psi</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Odd Shapes Parameters -->
+            <div id="inputs-odd_shapes" class="geometry-inputs-group" style="display: none;">
+              <div class="form-group">
+                <label class="form-label" for="odd-shape-select">Plate Shape Profile</label>
+                <select id="odd-shape-select" class="form-input" style="background: var(--bg-tertiary);">
+                  <option value="elliptical" selected>Elliptical Plate</option>
+                  <option value="triangular">Equilateral Triangular Plate</option>
+                  <option value="sector">Circular Sector Plate</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="plate-edge-odd">Edge Support Option</label>
+                <select id="plate-edge-odd" class="form-input" style="background: var(--bg-tertiary);">
+                  <option value="simply_supported" selected>Simply Supported</option>
+                  <option value="clamped">Clamped / Fixed</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="group-odd-a">
+                <label class="form-label" id="label-odd-a" for="odd-a">Semi-Major Axis (a)</label>
+                <div class="form-input-container">
+                  <input type="number" id="odd-a" class="form-input" value="10.0" step="0.5" min="0.1">
+                  <span class="form-input-unit">in</span>
+                </div>
+              </div>
+
+              <div class="form-group" id="group-odd-b">
+                <label class="form-label" id="label-odd-b" for="odd-b">Semi-Minor Axis (b)</label>
+                <div class="form-input-container">
+                  <input type="number" id="odd-b" class="form-input" value="6.0" step="0.5" min="0.1">
+                  <span class="form-input-unit">in</span>
+                </div>
+              </div>
+
+              <div class="form-group" id="group-odd-angle" style="display: none;">
+                <label class="form-label" for="odd-angle">Sector Angle (θ)</label>
+                <div class="form-input-container">
+                  <input type="number" id="odd-angle" class="form-input" value="90" step="5" min="1" max="360">
+                  <span class="form-input-unit">deg</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="odd-t">Plate Thickness (t)</label>
+                <div class="form-input-container">
+                  <input type="number" id="odd-t" class="form-input" value="0.25" step="0.01" min="0.01">
+                  <span class="form-input-unit">in</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="odd-q">Uniform Load (q)</label>
+                <div class="form-input-container">
+                  <input type="number" id="odd-q" class="form-input" value="5.0" step="0.5" min="0">
+                  <span class="form-input-unit">psi</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="odd-E">Modulus of Elasticity (E)</label>
+                <div class="form-input-container">
+                  <input type="number" id="odd-E" class="form-input" value="29000000" step="1000000" min="100000">
+                  <span class="form-input-unit">psi</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Calculations & Graphics Panel -->
+          <div style="display: flex; flex-direction: column; gap: 2rem;">
+            <!-- Dynamic Summary metrics -->
+            <div class="results-grid-container" id="plates-metrics-container">
+              <!-- CIRCULAR METRICS -->
+              <div class="circular-metric-group" style="display: contents;">
+                <div class="result-metric-card" style="grid-column: span 2;">
+                  <div class="metric-label">Max Deflection (y_max)</div>
+                  <div class="metric-value" id="m-circ-ymax">-</div>
+                </div>
+                <div class="result-metric-card" style="grid-column: span 2;">
+                  <div class="metric-label">Max Bending Stress (σ_max)</div>
+                  <div class="metric-value" id="m-circ-smax">-</div>
+                </div>
+                <div class="result-metric-card">
+                  <div class="metric-label">F₁ (Slope)</div>
+                  <div class="metric-value" id="m-f1">-</div>
+                </div>
+                <div class="result-metric-card">
+                  <div class="metric-label">C₁ Boundary</div>
+                  <div class="metric-value" id="m-c1">-</div>
+                </div>
+                <div class="result-metric-card">
+                  <div class="metric-label">L₁ Boundary</div>
+                  <div class="metric-value" id="m-l1">-</div>
+                </div>
+                <div class="result-metric-card">
+                  <div class="metric-label">L₁₁ Deflection</div>
+                  <div class="metric-value" id="m-l11">-</div>
+                </div>
+              </div>
+              <!-- RECTANGULAR & ODD METRICS -->
+              <div class="non-circular-metric-group" style="display: none;">
+                <div class="result-metric-card" style="grid-column: span 2;">
+                  <div class="metric-label">Maximum Deflection (y_max)</div>
+                  <div class="metric-value" id="m-ymax">-</div>
+                </div>
+                <div class="result-metric-card" style="grid-column: span 2;">
+                  <div class="metric-label">Maximum Stress (σ_max)</div>
+                  <div class="metric-value" id="m-smax">-</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Plots -->
+            <div class="glass-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.75rem;">
+                <h3 style="font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary);">Diagram Profile</h3>
+                <div class="tab-container" style="margin-bottom: 0;">
+                  <div class="tab-bar" id="plates-chart-selector" style="border: none; gap: 0.75rem;">
+                    <button class="tab-btn active" data-chart="deflection" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">Deflection</button>
+                    <button class="tab-btn" data-chart="moment" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">Moment</button>
+                    <button class="tab-btn" data-chart="shear" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">Shear</button>
+                  </div>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="platesChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Tabbed Table for Circular Plates -->
+            <div class="glass-card" id="circular-tables-card">
+              <div class="tab-container">
+                <div class="tab-bar">
+                  <button class="tab-btn active" data-target="panel-f">F Functions</button>
+                  <button class="tab-btn" data-target="panel-c">C Functions</button>
+                  <button class="tab-btn" data-target="panel-l">L Functions</button>
+                </div>
+              </div>
+
+              <div id="panel-f" class="tab-panel active">
+                <div class="table-responsive">
+                  <table class="table-custom" id="table-f">
+                    <thead>
+                      <tr>
+                        <th>Constant</th>
+                        <th>Value</th>
+                        <th>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div id="panel-c" class="tab-panel">
+                <div class="table-responsive">
+                  <table class="table-custom" id="table-c">
+                    <thead>
+                      <tr>
+                        <th>Constant</th>
+                        <th>Value</th>
+                        <th>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div id="panel-l" class="tab-panel">
+                <div class="table-responsive">
+                  <table class="table-custom" id="table-l">
+                    <thead>
+                      <tr>
+                        <th>Constant</th>
+                        <th>Value</th>
+                        <th>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Detailed outputs for Rectangular and Odd shape plates -->
+            <div class="glass-card" id="non-circular-details-card" style="display: none;">
+              <h3 class="card-title">Structural Properties & Calculations</h3>
+              <div class="table-responsive">
+                <table class="table-custom" id="table-non-circular">
+                  <thead>
+                    <tr>
+                      <th>Property / Term</th>
+                      <th>Calculated Value</th>
+                      <th>Reference Formula / Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Flexural Rigidity (D)</strong></td>
+                      <td id="nc-rigidity">-</td>
+                      <td>D = E*t³ / (12 * (1 - ν²))</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Aspect Ratio (a/b)</strong></td>
+                      <td id="nc-aspect">-</td>
+                      <td>Length divided by width (or major by minor axis)</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Form Factor (α)</strong></td>
+                      <td id="nc-alpha">-</td>
+                      <td>Deflection coefficient based on aspect ratio and boundary</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Form Factor (β)</strong></td>
+                      <td id="nc-beta">-</td>
+                      <td>Stress coefficient based on aspect ratio and boundary</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= BEAMS MODULE ================= -->
+      <section id="view-beams" class="module-view">
+        <header class="module-header">
+          <h1 class="module-title">Straight Beams Engine</h1>
+          <p class="module-description">Calculate bending, stress, and elastic deflection curves for straight beams under load.</p>
+        </header>
+
+        <div class="dashboard-grid">
+          <!-- Parameters -->
+          <div class="glass-card">
+            <h3 class="card-title">Beam Settings</h3>
+
+            <div class="form-group">
+              <label class="form-label" for="beam-edge">Support Condition</label>
+              <select id="beam-edge" class="form-input" style="cursor: pointer;">
+                <option value="simply_supported">Simply Supported (Pin–Roller)</option>
+                <option value="cantilever">Cantilever (Fixed–Free)</option>
+                <option value="fixed_fixed">Fixed–Fixed (Both Clamped)</option>
+                <option value="fixed_pinned">Fixed–Pinned (Propped Cantilever)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="L">Beam Length (L)</label>
+              <div class="form-input-container">
+                <input type="number" id="L" class="form-input" value="120" step="5" min="1">
+                <span class="form-input-unit">in</span>
+              </div>
+            </div>
+
+
+            <div class="form-group">
+              <label class="form-label" for="P">Point Load (P)</label>
+              <div class="form-input-container">
+                <input type="number" id="P" class="form-input" value="1000" step="100" min="1">
+                <span class="form-input-unit">lbs</span>
+              </div>
+            </div>
+
+            <div class="form-group" id="beam-load-pos-group">
+              <label class="form-label" for="beam-load-pos">Load Position (a) from left</label>
+              <div class="form-input-container">
+                <input type="number" id="beam-load-pos" class="form-input" value="60" step="1" min="0">
+                <span class="form-input-unit">in</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="E">Modulus of Elasticity (E)</label>
+              <div class="form-input-container">
+                <input type="number" id="E" class="form-input" value="29000000" step="500000" min="1">
+                <span class="form-input-unit">psi</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="I">Moment of Inertia (I)</label>
+              <div class="form-input-container">
+                <input type="number" id="I" class="form-input" value="15.5" step="0.5" min="0.1">
+                <span class="form-input-unit">in⁴</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="y">Outer Fiber Distance (y)</label>
+              <div class="form-input-container">
+                <input type="number" id="y" class="form-input" value="2.0" step="0.1" min="0.1">
+                <span class="form-input-unit">in</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Beam Calculations & Plot -->
+          <div style="display: flex; flex-direction: column; gap: 2rem;">
+            <div class="results-grid-container">
+              <div class="result-metric-card" style="grid-column: span 1;">
+                <div class="metric-label">Max Deflection</div>
+                <div class="metric-value" id="beam-deflection">-</div>
+              </div>
+              <div class="result-metric-card" style="grid-column: span 1;">
+                <div class="metric-label">Max Moment</div>
+                <div class="metric-value" id="beam-moment">-</div>
+              </div>
+              <div class="result-metric-card" style="grid-column: span 1;">
+                <div class="metric-label">Max Bending Stress</div>
+                <div class="metric-value" id="beam-stress">-</div>
+              </div>
+            </div>
+
+            <div class="glass-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.75rem;">
+                <h3 style="font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary);">Diagram Profile</h3>
+                <div class="tab-container" style="margin-bottom: 0;">
+                  <div class="tab-bar" id="beams-chart-selector" style="border: none; gap: 0.75rem;">
+                    <button class="tab-btn active" data-chart="deflection" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">Deflection</button>
+                    <button class="tab-btn" data-chart="moment" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">Moment</button>
+                    <button class="tab-btn" data-chart="shear" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">Shear</button>
+                  </div>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="beamChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= CONTACT STRESSES MODULE ================= -->
+      <section id="view-contact" class="module-view">
+        <header class="module-header">
+          <h1 class="module-title">Hertzian Contact Stresses Engine</h1>
+          <p class="module-description">Peak pressure, contact area dimensions, and subsurface stress depth profiles for elastic body contact.</p>
+        </header>
+
+        <div class="dashboard-grid">
+          <!-- Parameters -->
+          <div class="glass-card">
+            <h3 class="card-title">Contact Settings</h3>
+
+            <div class="form-group">
+              <label class="form-label" for="contact-type">Contact Type</label>
+              <select id="contact-type" class="form-input" style="cursor: pointer;">
+                <option value="sphere_sphere">Sphere on Sphere</option>
+                <option value="sphere_plane">Sphere on Flat Plane</option>
+                <option value="cylinder_cylinder">Cylinder on Cylinder (parallel axes)</option>
+                <option value="cylinder_plane">Cylinder on Flat Plane</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="c-R1">Radius Body 1 (R₁)</label>
+              <div class="form-input-container">
+                <input type="number" id="c-R1" class="form-input" value="25.0" step="1" min="0.001">
+                <span class="form-input-unit">mm</span>
+              </div>
+            </div>
+
+            <div class="form-group" id="c-R2-group">
+              <label class="form-label" for="c-R2">Radius Body 2 (R₂)</label>
+              <div class="form-input-container">
+                <input type="number" id="c-R2" class="form-input" value="40.0" step="1" min="0.001">
+                <span class="form-input-unit">mm</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="c-F">Normal Load (F)</label>
+              <div class="form-input-container">
+                <input type="number" id="c-F" class="form-input" value="500" step="50" min="1">
+                <span class="form-input-unit">N</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="c-E1">Modulus Body 1 (E₁)</label>
+              <div class="form-input-container">
+                <input type="number" id="c-E1" class="form-input" value="200000" step="10000" min="1">
+                <span class="form-input-unit">MPa</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="c-v1">Poisson's Ratio (ν₁)</label>
+              <div class="form-input-container">
+                <input type="number" id="c-v1" class="form-input" value="0.3" step="0.01" min="0.01" max="0.5">
+                <span class="form-input-unit">-</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="c-E2">Modulus Body 2 (E₂)</label>
+              <div class="form-input-container">
+                <input type="number" id="c-E2" class="form-input" value="200000" step="10000" min="1">
+                <span class="form-input-unit">MPa</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="c-v2">Poisson's Ratio (ν₂)</label>
+              <div class="form-input-container">
+                <input type="number" id="c-v2" class="form-input" value="0.3" step="0.01" min="0.01" max="0.5">
+                <span class="form-input-unit">-</span>
+              </div>
+            </div>
+
+            <div class="form-group" id="c-L-group" style="display:none;">
+              <label class="form-label" for="c-L">Contact Length (L)</label>
+              <div class="form-input-container">
+                <input type="number" id="c-L" class="form-input" value="30.0" step="1" min="0.1">
+                <span class="form-input-unit">mm</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Results & Chart -->
+          <div style="display: flex; flex-direction: column; gap: 2rem;">
+            <div class="results-grid-container">
+              <div class="result-metric-card">
+                <div class="metric-label">Peak Pressure p₀</div>
+                <div class="metric-value" id="c-p0">-</div>
+              </div>
+              <div class="result-metric-card">
+                <div class="metric-label">Contact Radius / Half-width</div>
+                <div class="metric-value" id="c-a">-</div>
+              </div>
+              <div class="result-metric-card">
+                <div class="metric-label">Max Shear Stress τ_max</div>
+                <div class="metric-value" id="c-tmax">-</div>
+              </div>
+              <div class="result-metric-card">
+                <div class="metric-label">Depth of τ_max</div>
+                <div class="metric-value" id="c-zdepth">-</div>
+              </div>
+            </div>
+
+            <div class="glass-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.75rem;">
+                <h3 style="font-size: 1.2rem; color: var(--text-primary);">Subsurface Stress Profile</h3>
+                <div class="tab-container" style="margin-bottom: 0;">
+                  <div class="tab-bar" id="contact-chart-selector" style="border: none; gap: 0.75rem;">
+                    <button class="tab-btn active" data-chart="pressure" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">Pressure</button>
+                    <button class="tab-btn" data-chart="shear" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">Shear Depth</button>
+                    <button class="tab-btn" data-chart="vonmises" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">Von Mises</button>
+                  </div>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="contactChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TORSION MODULE ================= -->
+      <section id="view-torsion" class="module-view">
+        <header class="module-header">
+          <h1 class="module-title">Torsion Engine</h1>
+          <p class="module-description">Shear stresses, torsional stiffness, and angle of twist for non-circular, hollow, and thin-walled sections.</p>
+        </header>
+
+        <div class="dashboard-grid">
+          <!-- Parameters -->
+          <div class="glass-card">
+            <h3 class="card-title">Section Settings</h3>
+
+            <div class="form-group">
+              <label class="form-label" for="torsion-type">Section Type</label>
+              <select id="torsion-type" class="form-input" style="cursor: pointer;">
+                <option value="solid_circle">Solid Circular Shaft</option>
+                <option value="hollow_circle">Hollow Circular Shaft</option>
+                <option value="solid_rectangle">Solid Rectangular Section</option>
+                <option value="thin_rect">Thin-Walled Rectangular Tube</option>
+                <option value="thin_open">Thin-Walled Open Section (Channel/I)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="t-T">Applied Torque (T)</label>
+              <div class="form-input-container">
+                <input type="number" id="t-T" class="form-input" value="5000" step="500" min="1">
+                <span class="form-input-unit">lb-in</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="t-G">Shear Modulus (G)</label>
+              <div class="form-input-container">
+                <input type="number" id="t-G" class="form-input" value="11200000" step="100000" min="1">
+                <span class="form-input-unit">psi</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="t-len">Shaft Length (L)</label>
+              <div class="form-input-container">
+                <input type="number" id="t-len" class="form-input" value="24" step="1" min="0.1">
+                <span class="form-input-unit">in</span>
+              </div>
+            </div>
+
+            <!-- Dimension inputs - shown/hidden by section type -->
+            <div class="form-group" id="t-d-group">
+              <label class="form-label" id="t-d-label" for="t-d">Outer Diameter (d)</label>
+              <div class="form-input-container">
+                <input type="number" id="t-d" class="form-input" value="2.0" step="0.1" min="0.01">
+                <span class="form-input-unit">in</span>
+              </div>
+            </div>
+
+            <div class="form-group" id="t-di-group" style="display:none;">
+              <label class="form-label" for="t-di">Inner Diameter (dᵢ)</label>
+              <div class="form-input-container">
+                <input type="number" id="t-di" class="form-input" value="1.2" step="0.1" min="0.01">
+                <span class="form-input-unit">in</span>
+              </div>
+            </div>
+
+            <div class="form-group" id="t-b-group" style="display:none;">
+              <label class="form-label" for="t-b">Width (b)</label>
+              <div class="form-input-container">
+                <input type="number" id="t-b" class="form-input" value="3.0" step="0.1" min="0.01">
+                <span class="form-input-unit">in</span>
+              </div>
+            </div>
+
+            <div class="form-group" id="t-h-group" style="display:none;">
+              <label class="form-label" for="t-h">Height (h)</label>
+              <div class="form-input-container">
+                <input type="number" id="t-h" class="form-input" value="2.0" step="0.1" min="0.01">
+                <span class="form-input-unit">in</span>
+              </div>
+            </div>
+
+            <div class="form-group" id="t-tw-group" style="display:none;">
+              <label class="form-label" for="t-tw">Wall Thickness (t)</label>
+              <div class="form-input-container">
+                <input type="number" id="t-tw" class="form-input" value="0.125" step="0.01" min="0.001">
+                <span class="form-input-unit">in</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Results & Chart -->
+          <div style="display: flex; flex-direction: column; gap: 2rem;">
+            <div class="results-grid-container">
+              <div class="result-metric-card">
+                <div class="metric-label">Max Shear Stress τ_max</div>
+                <div class="metric-value" id="t-tau">-</div>
+              </div>
+              <div class="result-metric-card">
+                <div class="metric-label">Angle of Twist θ</div>
+                <div class="metric-value" id="t-theta">-</div>
+              </div>
+              <div class="result-metric-card">
+                <div class="metric-label">Torsional Constant J</div>
+                <div class="metric-value" id="t-J">-</div>
+              </div>
+              <div class="result-metric-card">
+                <div class="metric-label">Torsional Rigidity GJ</div>
+                <div class="metric-value" id="t-GJ">-</div>
+              </div>
+            </div>
+
+            <div class="glass-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.75rem;">
+                <h3 style="font-size: 1.2rem; color: var(--text-primary);">Shear Stress Distribution</h3>
+                <div class="tab-container" style="margin-bottom: 0;">
+                  <div class="tab-bar" id="torsion-chart-selector" style="border: none; gap: 0.75rem;">
+                    <button class="tab-btn active" data-chart="stress" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">Shear Stress</button>
+                    <button class="tab-btn" data-chart="twist" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">Twist Angle</button>
+                  </div>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="torsionChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= COLUMNS MODULE ================= -->
+      <section id="view-columns" class="module-view">
+        <header class="module-header">
+          <h1 class="module-title">Columns Engine</h1>
+          <p class="module-description">Critical buckling loads (Euler &amp; Johnson), eccentric load amplification, and secant formula stresses for steel and aluminium columns.</p>
+        </header>
+
+        <div class="dashboard-grid">
+          <!-- Parameters -->
+          <div class="glass-card">
+            <h3 class="card-title">Column Settings</h3>
+
+            <div class="form-group">
+              <label class="form-label" for="col-material">Material</label>
+              <select id="col-material" class="form-input" style="cursor: pointer;">
+                <option value="steel">Steel (E = 200 GPa, σ_y = 250 MPa)</option>
+                <option value="steel_hs">High-Strength Steel (E = 200 GPa, σ_y = 690 MPa)</option>
+                <option value="aluminium">Aluminium 6061-T6 (E = 69 GPa, σ_y = 276 MPa)</option>
+                <option value="aluminium_2024">Aluminium 2024-T3 (E = 73 GPa, σ_y = 345 MPa)</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="col-custom-E-group" style="display:none;">
+              <label class="form-label" for="col-E">Elastic Modulus (E)</label>
+              <div class="form-input-container">
+                <input type="number" id="col-E" class="form-input" value="200000" step="1000" min="1">
+                <span class="form-input-unit">MPa</span>
+              </div>
+            </div>
+
+            <div class="form-group" id="col-custom-sy-group" style="display:none;">
+              <label class="form-label" for="col-sy">Yield Strength (σ_y)</label>
+              <div class="form-input-container">
+                <input type="number" id="col-sy" class="form-input" value="250" step="10" min="1">
+                <span class="form-input-unit">MPa</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="col-end">End Conditions</label>
+              <select id="col-end" class="form-input" style="cursor: pointer;">
+                <option value="pin_pin">Pin–Pin (K = 1.0)</option>
+                <option value="fixed_free">Fixed–Free / Cantilever (K = 2.0)</option>
+                <option value="fixed_pin">Fixed–Pin (K = 0.7)</option>
+                <option value="fixed_fixed">Fixed–Fixed (K = 0.5)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="col-section">Cross-Section</label>
+              <select id="col-section" class="form-input" style="cursor: pointer;">
+                <option value="solid_circle">Solid Circle</option>
+                <option value="hollow_circle">Hollow Circle (Pipe)</option>
+                <option value="rectangle">Solid Rectangle</option>
+                <option value="wide_flange">Wide Flange / I-Section</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="col-L">Column Length (L)</label>
+              <div class="form-input-container">
+                <input type="number" id="col-L" class="form-input" value="3000" step="100" min="1">
+                <span class="form-input-unit">mm</span>
+              </div>
+            </div>
+
+            <!-- Section dimensions -->
+            <div class="form-group" id="col-d-group">
+              <label class="form-label" id="col-d-label" for="col-d">Diameter (d)</label>
+              <div class="form-input-container">
+                <input type="number" id="col-d" class="form-input" value="50" step="5" min="1">
+                <span class="form-input-unit">mm</span>
+              </div>
+            </div>
+
+            <div class="form-group" id="col-di-group" style="display:none;">
+              <label class="form-label" for="col-di">Inner Diameter (dᵢ)</label>
+              <div class="form-input-container">
+                <input type="number" id="col-di" class="form-input" value="40" step="2" min="1">
+                <span class="form-input-unit">mm</span>
+              </div>
+            </div>
+
+            <div class="form-group" id="col-b-group" style="display:none;">
+              <label class="form-label" for="col-b">Width (b)</label>
+              <div class="form-input-container">
+                <input type="number" id="col-b" class="form-input" value="60" step="5" min="1">
+                <span class="form-input-unit">mm</span>
+              </div>
+            </div>
+
+            <div class="form-group" id="col-h-group" style="display:none;">
+              <label class="form-label" for="col-h">Height (h)</label>
+              <div class="form-input-container">
+                <input type="number" id="col-h" class="form-input" value="80" step="5" min="1">
+                <span class="form-input-unit">mm</span>
+              </div>
+            </div>
+
+            <div class="form-group" id="col-tf-group" style="display:none;">
+              <label class="form-label" for="col-tf">Flange Thickness (tᶠ)</label>
+              <div class="form-input-container">
+                <input type="number" id="col-tf" class="form-input" value="8" step="1" min="1">
+                <span class="form-input-unit">mm</span>
+              </div>
+            </div>
+
+            <div class="form-group" id="col-tw-group" style="display:none;">
+              <label class="form-label" for="col-tw">Web Thickness (tᵂ)</label>
+              <div class="form-input-container">
+                <input type="number" id="col-tw" class="form-input" value="5" step="1" min="1">
+                <span class="form-input-unit">mm</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="col-P">Applied Load (P)</label>
+              <div class="form-input-container">
+                <input type="number" id="col-P" class="form-input" value="50000" step="5000" min="0">
+                <span class="form-input-unit">N</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="col-e">Eccentricity (e) <small style="opacity:0.6">0 = concentric</small></label>
+              <div class="form-input-container">
+                <input type="number" id="col-e" class="form-input" value="0" step="1" min="0">
+                <span class="form-input-unit">mm</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Results & Chart -->
+          <div style="display: flex; flex-direction: column; gap: 2rem;">
+            <div class="results-grid-container">
+              <div class="result-metric-card">
+                <div class="metric-label">Euler Critical Load P_cr</div>
+                <div class="metric-value" id="col-pcr">-</div>
+              </div>
+              <div class="result-metric-card">
+                <div class="metric-label">Slenderness Ratio KL/r</div>
+                <div class="metric-value" id="col-slender">-</div>
+              </div>
+              <div class="result-metric-card">
+                <div class="metric-label">Critical Stress σ_cr</div>
+                <div class="metric-value" id="col-scr">-</div>
+              </div>
+              <div class="result-metric-card">
+                <div class="metric-label">Secant Max Stress σ_max</div>
+                <div class="metric-value" id="col-smax">-</div>
+              </div>
+              <div class="result-metric-card">
+                <div class="metric-label">Safety Factor (P_cr / P)</div>
+                <div class="metric-value" id="col-sf">-</div>
+              </div>
+              <div class="result-metric-card">
+                <div class="metric-label">Column Regime</div>
+                <div class="metric-value" id="col-regime">-</div>
+              </div>
+            </div>
+
+            <div class="glass-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.75rem;">
+                <h3 style="font-size: 1.2rem; color: var(--text-primary);">Column Stability Curves</h3>
+                <div class="tab-container" style="margin-bottom: 0;">
+                  <div class="tab-bar" id="columns-chart-selector" style="border: none; gap: 0.75rem;">
+                    <button class="tab-btn active" data-chart="euler" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">Euler Curve</button>
+                    <button class="tab-btn" data-chart="stress" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">Stress vs KL/r</button>
+                    <button class="tab-btn" data-chart="secant" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">Secant Formula</button>
+                  </div>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="columnsChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PRESSURE VESSELS & PIPES MODULE ================= -->
+      <section id="view-pressure_vessels" class="module-view">
+        <header class="module-header">
+          <h1 class="module-title">Pressure Vessels &amp; Pipes Engine</h1>
+          <p class="module-description">Thin and thick-wall hoop, longitudinal and radial stresses via Lamé equations. Pipe bending and water-hammer surge pressures.</p>
+        </header>
+
+        <div style="margin-bottom: 1.5rem;">
+          <div class="tab-bar" id="pv-type-selector">
+            <button class="tab-btn active" data-pv="cylinder">Cylinder (Thin/Thick)</button>
+            <button class="tab-btn" data-pv="sphere">Sphere</button>
+            <button class="tab-btn" data-pv="pipe">Pipe Bending</button>
+            <button class="tab-btn" data-pv="waterhammer">Water Hammer</button>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Parameters -->
+          <div class="glass-card">
+            <h3 class="card-title">Vessel Settings</h3>
+
+            <div class="form-group">
+              <label class="form-label" for="pv-material">Material</label>
+              <select id="pv-material" class="form-input" style="cursor: pointer;">
+                <option value="steel">Carbon Steel (E=200 GPa, σ_y=250 MPa, ν=0.3)</option>
+                <option value="steel_ss">Stainless Steel 316 (E=193 GPa, σ_y=290 MPa)</option>
+                <option value="aluminium">Aluminium 6061-T6 (E=69 GPa, σ_y=276 MPa)</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="pv-custom-E-group" style="display:none;">
+              <label class="form-label" for="pv-E">Elastic Modulus (E)</label>
+              <div class="form-input-container">
+                <input type="number" id="pv-E" class="form-input" value="200000" step="1000" min="1">
+                <span class="form-input-unit">MPa</span>
+              </div>
+            </div>
+
+            <div class="form-group" id="pv-custom-sy-group" style="display:none;">
+              <label class="form-label" for="pv-sy">Yield Strength (σ_y)</label>
+              <div class="form-input-container">
+                <input type="number" id="pv-sy" class="form-input" value="250" step="10" min="1">
+                <span class="form-input-unit">MPa</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="pv-ri">Inner Radius (Rᵢ)</label>
+              <div class="form-input-container">
+                <input type="number" id="pv-ri" class="form-input" value="100" step="5" min="1">
+                <span class="form-input-unit">mm</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="pv-t">Wall Thickness (t)</label>
+              <div class="form-input-container">
+                <input type="number" id="pv-t" class="form-input" value="8" step="1" min="0.1">
+                <span class="form-input-unit">mm</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="pv-pi">Internal Pressure (pᵢ)</label>
+              <div class="form-input-container">
+                <input type="number" id="pv-pi" class="form-input" value="10" step="1" min="0">
+                <span class="form-input-unit">MPa</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="pv-po">External Pressure (p₀)</label>
+              <div class="form-input-container">
+                <input type="number" id="pv-po" class="form-input" value="0" step="0.1" min="0">
+                <span class="form-input-unit">MPa</span>
+              </div>
+            </div>
+
+            <!-- Pipe bending extras -->
+            <div class="form-group" id="pv-L-group" style="display:none;">
+              <label class="form-label" for="pv-L">Pipe Length (L)</label>
+              <div class="form-input-container">
+                <input type="number" id="pv-L" class="form-input" value="3000" step="100" min="1">
+                <span class="form-input-unit">mm</span>
+              </div>
+            </div>
+
+            <div class="form-group" id="pv-F-group" style="display:none;">
+              <label class="form-label" for="pv-F">Bending Load (F)</label>
+              <div class="form-input-container">
+                <input type="number" id="pv-F" class="form-input" value="5000" step="500" min="0">
+                <span class="form-input-unit">N</span>
+              </div>
+            </div>
+
+            <!-- Water hammer extras -->
+            <div class="form-group" id="pv-v-group" style="display:none;">
+              <label class="form-label" for="pv-v">Flow Velocity (v)</label>
+              <div class="form-input-container">
+                <input type="number" id="pv-v" class="form-input" value="3" step="0.5" min="0.1">
+                <span class="form-input-unit">m/s</span>
+              </div>
+            </div>
+
+            <div class="form-group" id="pv-rho-group" style="display:none;">
+              <label class="form-label" for="pv-rho">Fluid Density (ρ)</label>
+              <div class="form-input-container">
+                <input type="number" id="pv-rho" class="form-input" value="1000" step="10" min="1">
+                <span class="form-input-unit">kg/m³</span>
+              </div>
+            </div>
+
+            <div class="form-group" id="pv-Kf-group" style="display:none;">
+              <label class="form-label" for="pv-Kf">Bulk Modulus of Fluid (Kf)</label>
+              <div class="form-input-container">
+                <input type="number" id="pv-Kf" class="form-input" value="2100" step="100" min="1">
+                <span class="form-input-unit">MPa</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Results & Chart -->
+          <div style="display: flex; flex-direction: column; gap: 2rem;">
+            <div class="results-grid-container" id="pv-results-grid">
+              <div class="result-metric-card">
+                <div class="metric-label">Hoop Stress σ_θ</div>
+                <div class="metric-value" id="pv-hoop">-</div>
+              </div>
+              <div class="result-metric-card">
+                <div class="metric-label">Longitudinal Stress σ_L</div>
+                <div class="metric-value" id="pv-long">-</div>
+              </div>
+              <div class="result-metric-card">
+                <div class="metric-label">Radial Stress σ_r (inner)</div>
+                <div class="metric-value" id="pv-radial">-</div>
+              </div>
+              <div class="result-metric-card">
+                <div class="metric-label">Max Shear Stress τ_max</div>
+                <div class="metric-value" id="pv-shear">-</div>
+              </div>
+              <div class="result-metric-card">
+                <div class="metric-label">Safety Factor (σ_y / σ_θ)</div>
+                <div class="metric-value" id="pv-sf">-</div>
+              </div>
+              <div class="result-metric-card">
+                <div class="metric-label">Regime</div>
+                <div class="metric-value" id="pv-regime">-</div>
+              </div>
+            </div>
+
+            <div class="glass-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.75rem;">
+                <h3 style="font-size: 1.2rem; color: var(--text-primary);">Stress Through Wall</h3>
+                <div class="tab-container" style="margin-bottom: 0;">
+                  <div class="tab-bar" id="pv-chart-selector" style="border: none; gap: 0.75rem;">
+                    <button class="tab-btn active" data-chart="wall" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">Wall Profile</button>
+                    <button class="tab-btn" data-chart="rating" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">Pressure Rating</button>
+                    <button class="tab-btn" data-chart="vonmises" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">Von Mises</button>
+                  </div>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="pvChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= BUCKLING MODULE ================= -->
+      <section id="view-buckling" class="module-view">
+        <header class="module-header">
+          <h1 class="module-title">Buckling Stability Engine</h1>
+          <p class="module-description">Calculate critical buckling loads and stresses for flat plates and thin shells under compression.</p>
+        </header>
+
+        <div class="tab-container">
+          <div class="tab-bar" id="buckling-geometry-tabs">
+            <button class="tab-btn active" data-geometry="rect_plate">Rectangular Plate</button>
+            <button class="tab-btn" data-geometry="circ_plate">Circular Plate</button>
+            <button class="tab-btn" data-geometry="thin_shell">Thin Shell</button>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Parameter Panel -->
+          <div class="panel">
+            <h3 class="card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M3 12h18"/></svg>
+              Parameters
+            </h3>
+            
+            <div class="form-group">
+              <label class="form-label" for="buckling-E">Young's Modulus (E)</label>
+              <div class="form-input-container">
+                <input type="number" id="buckling-E" class="form-input" value="29000000">
+                <span class="form-input-unit">psi</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="buckling-v">Poisson's Ratio (ν)</label>
+              <div class="form-input-container">
+                <input type="number" id="buckling-v" class="form-input" value="0.30" step="0.01">
+                <span class="form-input-unit">ratio</span>
+              </div>
+            </div>
+
+            <div id="buckling-inputs-container">
+              <!-- Dynamic inputs via JS -->
+            </div>
+          </div>
+
+          <!-- Results Panel -->
+          <div>
+            <div class="panel" style="margin-bottom: 2rem;">
+              <h3 class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Buckling Results
+              </h3>
+              <div class="results-grid-container">
+                <div class="result-metric-card">
+                  <div class="metric-label">Critical Stress (σ_cr)</div>
+                  <div class="metric-value" id="res-buckling-stress">0.0 psi</div>
+                </div>
+                <div class="result-metric-card">
+                  <div class="metric-label">Critical Load/Pressure</div>
+                  <div class="metric-value" id="res-buckling-load">0.0</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h3 class="card-title">Stability Curve</h3>
+              <div class="chart-container">
+                <canvas id="bucklingChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= EXTENSIONS LIBRARY ================= -->
+      <!-- ================= STRESS CONCENTRATION MODULE ================= -->
+      <section id="view-concentration" class="module-view">
+        <header class="module-header">
+          <h1 class="module-title">Stress Concentration Factors Engine</h1>
+          <p class="module-description">Calculate theoretical stress concentration factors (Kt) and fatigue notch factors (Kf) for various geometric discontinuities.</p>
+        </header>
+
+        <div class="tab-container" style="margin-bottom: 1.5rem;">
+          <div class="tab-bar" id="concentration-geometry-tabs">
+            <button class="tab-btn active" data-geometry="hole">Plate with Hole</button>
+            <button class="tab-btn" data-geometry="fillet">Stepped Shaft (Fillet)</button>
+            <button class="tab-btn" data-geometry="notch">Notched Bar</button>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Inputs Column -->
+          <div class="panel">
+            <h2 class="panel-title">Notch Geometry & Loading</h2>
+            <div class="form-group" style="margin-bottom: 1rem;">
+              <label class="form-label">Loading Type</label>
+              <select id="concentration-loading" class="form-select" style="width: 100%; padding: 0.5rem; border-radius: 4px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary);">
+                <option value="axial">Axial / Tension</option>
+                <option value="bending">Bending</option>
+                <option value="torsion" id="conc-opt-torsion" style="display:none;">Torsion</option>
+              </select>
+            </div>
+            <div id="concentration-inputs-container">
+              <!-- Dynamically populated by JS based on geometry -->
+            </div>
+            
+            <h2 class="panel-title" style="margin-top: 1.5rem;">Material Notch Sensitivity</h2>
+            <div class="form-group">
+              <label class="form-label">Notch Sensitivity (q) [0 to 1]</label>
+              <div class="input-with-unit">
+                <input type="number" id="concentration-q" value="0.8" step="0.05" class="form-input">
+                <span class="form-input-unit">-</span>
+              </div>
+            </div>
+            
+            <button class="btn btn-primary" onclick="runCalculations()" style="width: 100%; margin-top: 1.5rem;">Calculate Factors</button>
+          </div>
+
+          <!-- Results Column -->
+          <div class="panel">
+            <h2 class="panel-title">Concentration Factors</h2>
+            <div class="results-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="result-card">
+                <div class="result-label">Theoretical Factor (Kt)</div>
+                <div class="result-value" id="res-concentration-kt">-</div>
+              </div>
+              <div class="result-card">
+                <div class="result-label">Fatigue Factor (Kf)</div>
+                <div class="result-value" id="res-concentration-kf">-</div>
+              </div>
+              <div class="result-card" style="grid-column: span 2;">
+                <div class="result-label">Max Local Stress (σ_max or τ_max)</div>
+                <div class="result-value" id="res-concentration-stress" style="color: var(--accent-red);">-</div>
+              </div>
+            </div>
+
+            <div class="chart-container" style="margin-top: 1.5rem;">
+              <div class="tab-bar" style="margin-bottom: 0.5rem;">
+                <button class="tab-btn active">Kt vs r/d Curve</button>
+              </div>
+              <div style="height: 250px; position: relative;">
+                <canvas id="concentrationChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= DYNAMIC LOADS MODULE ================= -->
+      <section id="view-dynamic" class="module-view">
+        <header class="module-header">
+          <h1 class="module-title">Dynamic Loads Engine</h1>
+          <p class="module-description">Impact/shock loading and single-degree-of-freedom natural frequencies.</p>
+        </header>
+
+        <div class="tab-container" style="margin-bottom: 1.5rem;">
+          <div class="tab-bar" id="dynamic-tabs">
+            <button class="tab-btn active" data-dyntype="impact">Impact Loading</button>
+            <button class="tab-btn" data-dyntype="frequency">Natural Frequencies</button>
+          </div>
+        </div>
+
+        <div class="input-grid">
+          <!-- Impact Loading Inputs -->
+          <div class="glass-card" id="inputs-dynamic-impact">
+            <h3>Impact Parameters</h3>
+            <div class="input-group">
+              <label>Dropped Weight (W)</label>
+              <input type="number" id="dyn-w" class="form-input" value="100">
+            </div>
+            <div class="input-group">
+              <label>Drop Height (h)</label>
+              <input type="number" id="dyn-h" class="form-input" value="5">
+            </div>
+            <div class="input-group">
+              <label>Structural Stiffness (k)</label>
+              <input type="number" id="dyn-k" class="form-input" value="1000">
+            </div>
+          </div>
+
+          <!-- Natural Frequency Inputs -->
+          <div class="glass-card" id="inputs-dynamic-frequency" style="display: none;">
+            <h3>Frequency Parameters</h3>
+            <div class="input-group">
+              <label>Boundary Condition</label>
+              <select id="dyn-freq-type" class="form-input">
+                <option value="spring">Spring-Mass</option>
+                <option value="cantilever">Cantilever (End Mass)</option>
+                <option value="simply_supported">Simply Supported (Center Mass)</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label>Weight (W)</label>
+              <input type="number" id="dyn-freq-w" class="form-input" value="100">
+            </div>
+            <div class="input-group dyn-beam-input">
+              <label>Length (L)</label>
+              <input type="number" id="dyn-freq-l" class="form-input" value="100">
+            </div>
+            <div class="input-group dyn-beam-input">
+              <label>Modulus of Elasticity (E)</label>
+              <input type="number" id="dyn-freq-e" class="form-input" value="29000000">
+            </div>
+            <div class="input-group dyn-beam-input">
+              <label>Area Moment of Inertia (I)</label>
+              <input type="number" id="dyn-freq-i" class="form-input" value="50">
+            </div>
+            <div class="input-group dyn-spring-input" style="display: none;">
+              <label>Spring Stiffness (k)</label>
+              <input type="number" id="dyn-freq-k" class="form-input" value="1000">
+            </div>
+          </div>
+
+          <!-- Results -->
+          <div class="glass-card results-card">
+            <h3>Dynamic Results</h3>
+            <div class="result-value">
+              <span id="dyn-res-1-label">Impact Factor (n)</span>
+              <strong id="dyn-res-1-val">--</strong>
+            </div>
+            <div class="result-value">
+              <span id="dyn-res-2-label">Dynamic Deflection</span>
+              <strong id="dyn-res-2-val">--</strong>
+            </div>
+            <div class="result-value">
+              <span id="dyn-res-3-label">Dynamic Load (F)</span>
+              <strong id="dyn-res-3-val">--</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SHELLS MODULE ================= -->
+      <section id="view-shells" class="module-view">
+        <header class="module-header">
+          <h1 class="module-title">Shells of Revolution Engine</h1>
+          <p class="module-description">Membrane stresses in spherical, cylindrical, and conical shells under pressure.</p>
+        </header>
+
+        <div class="tab-container" style="margin-bottom: 1.5rem;">
+          <div class="tab-bar" id="shell-tabs">
+            <button class="tab-btn active" data-shelltype="spherical">Spherical Dome</button>
+            <button class="tab-btn" data-shelltype="cylindrical">Cylindrical Shell</button>
+            <button class="tab-btn" data-shelltype="conical">Conical Shell</button>
+          </div>
+        </div>
+
+        <div class="input-grid">
+          <div class="glass-card">
+            <h3>Geometry & Loads</h3>
+            <div class="input-group">
+              <label>Pressure (p)</label>
+              <input type="number" id="shell-p" class="form-input" value="100">
+            </div>
+            <div class="input-group">
+              <label>Radius (r)</label>
+              <input type="number" id="shell-r" class="form-input" value="50">
+            </div>
+            <div class="input-group">
+              <label>Thickness (t)</label>
+              <input type="number" id="shell-t" class="form-input" value="0.5">
+            </div>
+            <div class="input-group" id="shell-cone-angle" style="display: none;">
+              <label>Cone Half-Angle (α, degrees)</label>
+              <input type="number" id="shell-alpha" class="form-input" value="30">
+            </div>
+          </div>
+
+          <div class="glass-card results-card">
+            <h3>Membrane Stresses</h3>
+            <div class="result-value">
+              <span id="shell-res-1-label">Meridional/Longitudinal Stress</span>
+              <strong id="shell-res-1-val">--</strong>
+            </div>
+            <div class="result-value">
+              <span id="shell-res-2-label">Hoop Stress</span>
+              <strong id="shell-res-2-val">--</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= CURVED BEAMS MODULE ================= -->
+      <section id="view-curved_beams" class="module-view">
+        <header class="module-header">
+          <h1 class="module-title">Curved Beams Engine</h1>
+          <p class="module-description">Winkler-Bach theory for non-linear stress distribution in crane hooks and rings.</p>
+        </header>
+
+        <div class="input-grid">
+          <div class="glass-card">
+            <h3>Geometry & Loads</h3>
+            <div class="input-group">
+              <label>Cross Section</label>
+              <select id="curved-section" class="form-input">
+                <option value="rectangular">Solid Rectangular</option>
+                <option value="circular">Solid Circular</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label>Centroidal Radius ($\bar{r}$)</label>
+              <input type="number" id="curved-rbar" class="form-input" value="10">
+            </div>
+            <div class="input-group" id="curved-rect-inputs">
+              <label>Width (b)</label>
+              <input type="number" id="curved-b" class="form-input" value="2">
+              <label style="margin-top:0.5rem">Depth (h)</label>
+              <input type="number" id="curved-h" class="form-input" value="4">
+            </div>
+            <div class="input-group" id="curved-circ-inputs" style="display: none;">
+              <label>Diameter (d)</label>
+              <input type="number" id="curved-d" class="form-input" value="4">
+            </div>
+            <div class="input-group">
+              <label>Bending Moment (M)</label>
+              <input type="number" id="curved-m" class="form-input" value="10000">
+            </div>
+            <div class="input-group">
+              <label>Axial Force (P)</label>
+              <input type="number" id="curved-p" class="form-input" value="500">
+            </div>
+          </div>
+
+          <div class="glass-card results-card">
+            <h3>Section Properties</h3>
+            <div class="result-value">
+              <span>Area (A)</span>
+              <strong id="curved-res-a">--</strong>
+            </div>
+            <div class="result-value">
+              <span>Neutral Axis Radius (R)</span>
+              <strong id="curved-res-R">--</strong>
+            </div>
+            <div class="result-value">
+              <span>Shift of Neutral Axis (e)</span>
+              <strong id="curved-res-e">--</strong>
+            </div>
+            
+            <h3 style="margin-top:1.5rem">Extreme Fiber Stresses</h3>
+            <div class="result-value">
+              <span>Inner Fiber Stress</span>
+              <strong id="curved-res-inner" style="color:var(--danger)">--</strong>
+            </div>
+            <div class="result-value">
+              <span>Outer Fiber Stress</span>
+              <strong id="curved-res-outer" style="color:var(--success)">--</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= FORMULA GUIDE MODULE ================= -->
+      <section id="view-formulas" class="module-view">
+        <header class="module-header">
+          <h1 class="module-title">Formula Reference Engine</h1>
+          <p class="module-description">Primary governing equations implemented in the Roark's Stress & Strain Calculator.</p>
+        </header>
+
+        <div class="glass-card" style="display: flex; flex-direction: column; gap: 2rem;">
+          
+          <div>
+            <h3 style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">1. Flat Plates (Circular & Rectangular)</h3>
+            <p style="color: var(--text-secondary); margin: 0.5rem 0 1rem 0;">Bending stresses and deflections for flat plates under uniform transverse loads.</p>
+            <div class="formula-block" style="font-size: 1.1rem; text-align: center; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+              $$ \sigma_{max} = \frac{\beta q b^2}{t^2} $$
+              $$ y_{max} = \frac{\alpha q b^4}{E t^3} $$
+            </div>
+            <p style="color: var(--text-secondary); margin-top: 1rem; font-size: 0.9rem;">Where $q$ is uniform pressure, $t$ is thickness, and $\alpha, \beta$ are Roark's tabulated coefficients based on boundary conditions.</p>
+          </div>
+
+          <div>
+            <h3 style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">2. Straight Beams</h3>
+            <p style="color: var(--text-secondary); margin: 0.5rem 0 1rem 0;">Governing differential equation of the deflection curve and flexure formulas.</p>
+            <div class="formula-block" style="font-size: 1.1rem; text-align: center; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+              $$ E I \frac{d^2y}{dx^2} = M(x) $$
+              $$ \sigma_{bend} = \frac{M c}{I} $$
+              $$ \tau_{shear} = \frac{V Q}{I b} $$
+            </div>
+          </div>
+
+          <div>
+            <h3 style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">3. Torsion</h3>
+            <p style="color: var(--text-secondary); margin: 0.5rem 0 1rem 0;">Angular twist and maximum shear stress for cross-sections under twisting moments.</p>
+            <div class="formula-block" style="font-size: 1.1rem; text-align: center; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+              $$ \theta = \frac{T L}{J G} $$
+              $$ \tau_{max} = \frac{T r}{J} \quad \text{(Solid Circular)} $$
+            </div>
+          </div>
+
+          <div>
+            <h3 style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">4. Columns (Buckling)</h3>
+            <p style="color: var(--text-secondary); margin: 0.5rem 0 1rem 0;">Euler's critical load for long columns and the Secant formula for eccentric loading.</p>
+            <div class="formula-block" style="font-size: 1.1rem; text-align: center; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+              $$ P_{cr} = \frac{\pi^2 E I}{(K L)^2} $$
+              $$ \sigma_{max} = \frac{P}{A} \left[ 1 + \frac{e c}{r^2} \sec\left( \frac{K L}{2r} \sqrt{\frac{P}{E A}} \right) \right] $$
+            </div>
+          </div>
+
+          <div>
+            <h3 style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">5. Contact Stresses (Hertzian)</h3>
+            <p style="color: var(--text-secondary); margin: 0.5rem 0 1rem 0;">Maximum contact pressure for two elastic bodies pressed together.</p>
+            <div class="formula-block" style="font-size: 1.1rem; text-align: center; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+              $$ p_{max} = \frac{3 F}{2 \pi a^2} \quad \text{(Point Contact)} $$
+              $$ p_{max} = \frac{2 F}{\pi b L} \quad \text{(Line Contact)} $$
+            </div>
+            <p style="color: var(--text-secondary); margin-top: 1rem; font-size: 0.9rem;">Where $a$ and $b$ are the semi-axes of the contact ellipse or half-width of the contact area.</p>
+          </div>
+
+          <div>
+            <h3 style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">6. Dynamic Loads</h3>
+            <p style="color: var(--text-secondary); margin: 0.5rem 0 1rem 0;">Impact amplification factor and fundamental natural frequency.</p>
+            <div class="formula-block" style="font-size: 1.1rem; text-align: center; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+              $$ n = 1 + \sqrt{1 + \frac{2h}{y_{st}}} $$
+              $$ f_n = \frac{1}{2\pi} \sqrt{\frac{k}{m}} $$
+            </div>
+          </div>
+
+          <div>
+            <h3 style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">7. Shells of Revolution</h3>
+            <p style="color: var(--text-secondary); margin: 0.5rem 0 1rem 0;">Membrane stresses for thin-walled spherical and cylindrical vessels.</p>
+            <div class="formula-block" style="font-size: 1.1rem; text-align: center; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+              $$ \sigma_{spherical} = \frac{p r}{2 t} $$
+              $$ \sigma_{hoop} = \frac{p r}{t} \quad \text{(Cylinder)} $$
+            </div>
+          </div>
+
+          <div>
+            <h3 style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">8. Curved Beams</h3>
+            <p style="color: var(--text-secondary); margin: 0.5rem 0 1rem 0;">Winkler-Bach theory for non-linear stress distribution.</p>
+            <div class="formula-block" style="font-size: 1.1rem; text-align: center; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+              $$ e = \bar{r} - R $$
+              $$ \sigma = \frac{P}{A} + \frac{M}{A e} \left( \frac{y}{R + y} \right) $$
+            </div>
+          </div>
+
+        </div>
+    </main>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
